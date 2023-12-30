@@ -12,12 +12,16 @@ computer program. It is used for creating and evolving programs used in the
 from copy import copy
 import pandas as pd
 import random
+
 import numpy as np
 from sklearn.utils.random import sample_without_replacement
 
 from .functions import _Function
 from .utils import check_random_state
 
+import pickle
+global pickle_trees
+pickle_trees = []
 class _Program(object):
 
     """A program-like representation of the evolved program.
@@ -382,8 +386,18 @@ class _Program(object):
 
         if program is None:
             program = self.program
+        else:
+            print("I have a program")
 
+        # pickle_trees = []
+
+        '''
+        [program, start, end]
+
+        '''
+        
         for i in range(len(program)):
+            pickle_tree = []
             start = i
             stack = 1
             end = start
@@ -406,17 +420,27 @@ class _Program(object):
                 if subtree == 0:
                     subtree = "X0"
                     # print("subtree: ", subtree)
+            pickle_tree.append(self)
+            pickle_tree.append(start)   
+            pickle_tree.append(end)       
+            pickle_trees.append(pickle_tree)
 
-            import csv
+        print(f'pickle trees length: {len(pickle_trees)}')
+        with open("knn_data.pkl", "wb") as pklfile:
+            print(f'now pickle trees length: {len(pickle_trees)}')
+            pickle.dump(pickle_trees, pklfile)
+
+            #  import csv
             # for i in range(len(subprogram)):
             #     output = eval(subprogram[i])
             #     print(output)
             
             # write = [start, end, subtree, output]
-            write = [start, end, subtree]
-            with open("knn_data.csv", "a", newline="") as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(write)
+            # write = [start, end, subtree]
+            # write = [start, end]
+            # with open("knn_data.csv", "a", newline="") as csvfile:
+            #     writer = csv.writer(csvfile)
+            #     writer.writerow(write)
         
         # Check for single-node programs
         node = self.program[0]
@@ -524,7 +548,7 @@ class _Program(object):
 
         """
         y_pred = self.execute(X)
-        print(f'subtree: {self}')
+        # print(f'subtree: {self}')
         if self.transformer:
             y_pred = self.transformer(y_pred)
         raw_fitness = self.metric(y, y_pred, sample_weight)

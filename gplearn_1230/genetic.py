@@ -81,13 +81,14 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
 
     # Build programs
     programs = []
-    for i in range(n_programs):
-        # print(f'The {i}th program!!!')
 
-        with open("knn_data.csv", "a", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            program_index = [str(i)]
-            writer.writerow(program_index)
+    for i in range(n_programs):
+        print(f'The {i}th program!!!')
+    
+        # with open("knn_data.csv", "a", newline="") as csvfile:
+        #     writer = csv.writer(csvfile)
+        #     program_index = [str(i)]
+        #     writer.writerow(program_index)
             # if i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
             #     writer.writerow([f'{i}'])
             # else:

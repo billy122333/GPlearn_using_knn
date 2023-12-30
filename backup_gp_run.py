@@ -1,5 +1,5 @@
-from gplearn_1227.genetic import SymbolicRegressor
-from gplearn_1227.functions import _Function
+from gplearn_1230.genetic import SymbolicRegressor
+from gplearn_1230.functions import _Function
 
 import time
 import os
