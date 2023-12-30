@@ -82,7 +82,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     # Build programs
     programs = []
     for i in range(n_programs):
-        print(f'The {i}th program!!!')
+        # print(f'The {i}th program!!!')
 
         with open("knn_data.csv", "a", newline="") as csvfile:
             writer = csv.writer(csvfile)

@@ -10,7 +10,8 @@ computer program. It is used for creating and evolving programs used in the
 # License: BSD 3 clause
 
 from copy import copy
-
+import pandas as pd
+import random
 import numpy as np
 from sklearn.utils.random import sample_without_replacement
 
@@ -591,6 +592,82 @@ class _Program(object):
         """Return a copy of the embedded program."""
         return copy(self.program)
 
+    # Mine
+    def get_subtree_bounds(start, program):
+        stack = 1
+        end = start
+        while stack > end - start:
+            node = program[end]
+            if isinstance(node, _Function):
+                stack += node.arity
+            end += 1
+        return end
+
+        """
+        program_index start end output
+
+        """
+    program = "div(div(0.653, -0.276), div(X0, X0))"
+    # def get_my_donor(program, reiciever_start, reciever_end, k = 5):
+    #     knn_neightbors_df = pd.read_csv('gplearn_1227/knn_data_y_sorted.csv')
+    #     # print("knn_neightbors_df", knn_neightbors_df['Program'])
+    #     tmp = knn_neightbors_df[(knn_neightbors_df['Program'] == (str(program)))] # & 
+    #                             # (knn_neightbors_df['Start'] == reiciever_start) & 
+    #                             # (knn_neightbors_df['End'] == reciever_end)]
+    #     print("program: ", program)
+    #     random_num = np.random.randint(-k, k)
+    #     if random_num == 0:
+    #         random_num = 1
+    #     donor_index = tmp.index + random_num
+    #     donor = knn_neightbors_df.iloc[donor_index]['Program'].values
+    #     print(donor)
+
+    #     from .functions import add2, sub2, mul2, div2
+    #     # TODO
+    #     expression = [0.32]
+
+    #     program = _Program(function_set=[add2, sub2, mul2, div2],
+    #                     arities=program.arities,
+    #                     init_depth=program.init_depth,
+    #                     init_method=program.init_method,
+    #                     n_features=program.n_features,
+    #                     const_range=program.const_range,
+    #                     metric=program.metric,
+    #                     p_point_replace=program.p_point_replace,
+    #                     parsimony_coefficient=program.parsimony_coefficient,
+    #                     random_state=9,
+    #                     transformer=program.transformer,
+    #                     feature_names=program.feature_names,
+    #                     # other parameters like init_depth, init_method, etc.,
+    #                     program=expression  # Pass the RPN expression here
+    #                     )
+
+    #     # print(knn_neightbors_df.iloc[donor_index])
+    #     return program
+    
+    def get_left_right_subtree(self, program, node_index):
+            
+        # 確保節點是函數且至少有一個子節點
+        node = program[node_index]
+        print("program: ", program)
+        if isinstance(node, _Function) and node.arity > 0:
+            left_start = node_index + 1
+            left_end = self.get_subtree_bounds(left_start, program)
+        else:
+            left_start = None
+            left_end = None
+        
+        if isinstance(node, _Function) and node.arity == 2:
+            # 右子樹從左子樹結束的下一個元素開始
+            right_start = left_end + 1
+            right_end = self.get_subtree_bounds(right_start, program)
+        else:
+            right_start = None
+            right_end = None
+
+            return left_start, left_end, right_start, right_end
+
+
     def crossover(self, donor, random_state):
         """Perform the crossover genetic operation on the program.
 
@@ -612,18 +689,51 @@ class _Program(object):
             The flattened tree representation of the program.
 
         """
-        # Get a subtree to replace
         start, end = self.get_subtree(random_state)
         removed = range(start, end)
+        removed_program = self.program[start:end]
         # Get a subtree to donate
-        donor_start, donor_end = self.get_subtree(random_state, donor)
-        # print(f'donor: {donor}')
-        donor_removed = list(set(range(len(donor))) -
-                             set(range(donor_start, donor_end)))
-        # Insert genetic material from donor
-        return (self.program[:start] +
-                donor[donor_start:donor_end] +
-                self.program[end:]), removed, donor_removed
+        print("worked successfully")
+        donor = self.get_my_donor(removed_program, start, end)  
+
+            # My_donor = get_my_donor(removed)
+            # donor_start, donor_end = My_donor
+        # TODO : 這裡要改成從reiciever中取子樹
+        tmp_program= (self.program[:start] + donor.program + self.program[end:])
+        print("tmp_program: ", tmp_program)
+        while True:
+            
+            # if the node is a leaf, break
+            if not isinstance(tmp_program[start], _Function):
+                break
+            direction = random.choice(['left', 'right'])
+            left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
+            if direction == 'left' and left_start is not None:
+                start, end = left_start, left_end
+            elif direction == 'right' and right_start is not None:
+                start, end = right_start, right_end
+            else:
+                break  # 如果無法取得有效的子樹，終止迴圈
+            removed_program = tmp_program[start:end]
+            # Get a subtree to donate
+            donor = self.get_my_donor(removed_program, start, end)
+            tmp_program = (tmp_program[:start] + donor + tmp_program[end:])
+
+
+        return self.program, removed, removed
+
+        # # Get a subtree to replace
+        # start, end = self.get_subtree(random_state)
+        # removed = range(start, end)
+        # # Get a subtree to donate
+        # donor_start, donor_end = self.get_subtree(random_state, donor)
+        # # print(f'donor: {donor}')
+        # donor_removed = list(set(range(len(donor))) -
+        #                      set(range(donor_start, donor_end)))
+        # # Insert genetic material from donor
+        # return (self.program[:start] +
+        #         donor[donor_start:donor_end] +
+        #         self.program[end:]), removed, donor_removed
 
     def subtree_mutation(self, random_state):
         """Perform the subtree mutation operation on the program.
