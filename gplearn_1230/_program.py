@@ -10,12 +10,15 @@ computer program. It is used for creating and evolving programs used in the
 # License: BSD 3 clause
 
 from copy import copy
+import pandas as pd
+import random
 
 import numpy as np
 from sklearn.utils.random import sample_without_replacement
 
 from .functions import _Function
 from .utils import check_random_state
+import mystr
 
 import pickle
 global pickle_trees
@@ -387,7 +390,6 @@ class _Program(object):
         else:
             print("I have a program")
 
-        import pickle
         # pickle_trees = []
 
         '''
@@ -429,18 +431,6 @@ class _Program(object):
             # print(f'now pickle trees length: {len(pickle_trees)}')
             pickle.dump(pickle_trees, pklfile)
 
-            #  import csv
-            # for i in range(len(subprogram)):
-            #     output = eval(subprogram[i])
-            #     print(output)
-            
-            # write = [start, end, subtree, output]
-            # write = [start, end, subtree]
-            # write = [start, end]
-            # with open("knn_data.csv", "a", newline="") as csvfile:
-            #     writer = csv.writer(csvfile)
-            #     writer.writerow(write)
-        
         # Check for single-node programs
         node = self.program[0]
         if isinstance(node, float):
@@ -615,6 +605,89 @@ class _Program(object):
         """Return a copy of the embedded program."""
         return copy(self.program)
 
+    # Mine
+    def get_subtree_bounds(self, start, program):
+        print("program: ", mystr.mystr(program))
+        print("program:", program)
+        stack = 1
+        end = start
+        while stack > end - start:
+            node = program[end]
+            if isinstance(node, _Function):
+                stack += node.arity
+            end += 1
+        return end
+
+        """
+        program_index start end output
+
+        """
+    def get_my_donor(self, program, k = 5):
+        with open("knn_data.pkl", "rb") as pklfile:
+            pickle_trees = pickle.load(pklfile)
+        """
+        [[program, start, end],...]
+        """
+        DEBUG = False
+        for i in range(len(pickle_trees)) :
+            subtree = pickle_trees[i]
+            start = subtree[1]
+            end = subtree[2]
+            # with open ("knn_data.csv", "a") as csvfile:
+            #     csvfile.write(str(i))
+            #     csvfile.write("\t")
+            #     csvfile.write(mystr.mystr(subtree[0].program[start:end]))
+            #     csvfile.write("\n")
+            # if i == 4462:
+            #     print("program: ", type(mystr.mystr(program)),mystr.mystr(program))
+            #     print("subtree: ", type(mystr.mystr(subtree[0].program[start:end])), mystr.mystr(subtree[0].program[start:end]))
+            #     print("equal: ", mystr.mystr(program) == mystr.mystr(subtree[0].program[start:end]))
+
+            # It would return false because of the different memory address
+            # if (program) == (subtree[0].program[start:end]): 
+            if mystr.mystr(program) == mystr.mystr(subtree[0].program[start:end]):
+                if DEBUG:
+                    print("found in str ----------------------------------------")
+                    print("program: ", mystr.mystr(program))
+                    print("i: ", i)
+                random_num = np.random.randint(-k, k)
+                print("random_num: ", random_num)
+                if random_num == 0:
+                    random_num = 1
+                donor_index = i + random_num
+                donor_list = pickle_trees[donor_index]
+                donor_tree, donor_start, donor_end = donor_list
+                return donor_tree, donor_start, donor_end
+            else:
+                continue
+        
+
+       
+        
+    
+    def get_left_right_subtree(self, program, node_index):
+        print("program: ", mystr.mystr(program))
+        print("node_index: ", node_index)
+        # 確保節點是函數且至少有一個子節點
+        node = program[node_index]
+        if isinstance(node, _Function) and node.arity > 0:
+            left_start = node_index + 1
+            left_end = self.get_subtree_bounds(left_start, program)
+        else:
+            left_start = None
+            left_end = None
+        
+        if isinstance(node, _Function) and node.arity == 2:
+            # 右子樹從左子樹結束的下一個元素開始
+            right_start = left_end 
+            right_end = self.get_subtree_bounds(right_start, program)
+        else:
+            right_start = None
+            right_end = None
+
+            return left_start, left_end, right_start, right_end
+
+
     def crossover(self, donor, random_state):
         """Perform the crossover genetic operation on the program.
 
@@ -636,18 +709,59 @@ class _Program(object):
             The flattened tree representation of the program.
 
         """
-        # Get a subtree to replace
         start, end = self.get_subtree(random_state)
+        print("start: ", start)
+        print("end: ", end)
         removed = range(start, end)
+        removed_program = self.program[start:end]
+        print("program: ", mystr.mystr(self.program))
+        print("removed_program: ", mystr.mystr(removed_program))
         # Get a subtree to donate
-        donor_start, donor_end = self.get_subtree(random_state, donor)
-        # print(f'donor: {donor}')
-        donor_removed = list(set(range(len(donor))) -
+        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
+        # TODO : compare the fitness with original program (Opitimal mixing OM)
+        tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
+        donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
-        # Insert genetic material from donor
-        return (self.program[:start] +
-                donor[donor_start:donor_end] +
-                self.program[end:]), removed, donor_removed
+        print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
+        print("tmp_program: ", mystr.mystr(tmp_program))
+        while True:
+            
+            # if the node is a leaf, break
+            if not isinstance(tmp_program[start], _Function):
+                break
+            # TODO : Use Monte Carlo tree search (MCTS) to decide the direction
+            direction = random.choice(['left', 'right'])
+            try :
+                left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
+            except:
+                # 如果無法取得有效的子樹，終止迴圈
+                break
+            if direction == 'left' and left_start is not None:
+                start, end = left_start, left_end
+            elif direction == 'right' and right_start is not None:
+                start, end = right_start, right_end
+            removed_program = tmp_program[start:end]
+            # Get a subtree to donate
+            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
+            donor_removed = list(set(range(len(donor_tree))) -
+                             set(range(donor_start, donor_end)))
+            tmp_program = (tmp_program[:start] + donor + tmp_program[end:])
+
+
+        return tmp_program, removed, donor_removed
+
+        # # Get a subtree to replace
+        # start, end = self.get_subtree(random_state)
+        # removed = range(start, end)
+        # # Get a subtree to donate
+        # donor_start, donor_end = self.get_subtree(random_state, donor)
+        # # print(f'donor: {donor}')
+        # donor_removed = list(set(range(len(donor))) -
+        #                      set(range(donor_start, donor_end)))
+        # # Insert genetic material from donor
+        # return (self.program[:start] +
+        #         donor[donor_start:donor_end] +
+        #         self.program[end:]), removed, donor_removed
 
     def subtree_mutation(self, random_state):
         """Perform the subtree mutation operation on the program.

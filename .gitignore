@@ -170,3 +170,5 @@ knn_data.csv
 knn_data_y.csv
 knn_data_y_sorted.csv
 my_knn.py
+
+test_scripts/*
