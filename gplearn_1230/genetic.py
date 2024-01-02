@@ -8,7 +8,6 @@ computer programs.
 # Author: Trevor Stephens <trevorstephens.com>
 #
 # License: BSD 3 clause
-
 import itertools
 from abc import ABCMeta, abstractmethod
 from time import time
@@ -23,21 +22,24 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils import compute_sample_weight
 from sklearn.utils.validation import check_array, _check_sample_weight
 from sklearn.utils.multiclass import check_classification_targets
-
 from ._program import _Program
 from .fitness import _fitness_map, _Fitness
 from .functions import _function_map, _Function, sig1 as sigmoid
 from .utils import _partition_estimators
 from .utils import check_random_state
 
+from .make_pickle_file import main
+from ._program import pickle_trees
+
 __all__ = ['SymbolicRegressor', 'SymbolicClassifier', 'SymbolicTransformer']
 
 MAX_INT = np.iinfo(np.int32).max
 
-import csv
-with open("knn_data.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        # writer.writerow(['Subprogram'])
+# import csv
+# with open("knn_data.csv", "w", newline="") as csvfile:
+#         writer = csv.writer(csvfile)
+#         # writer.writerow(['Subprogram'])
+
 
 def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     """Private function used to build a batch of programs within a job."""
@@ -67,7 +69,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     def _tournament():
         """Find the fittest individual from a sub-population."""
         contenders = random_state.randint(0, len(parents), tournament_size)
-        print(f'contender: {contenders}') # list with index (length = tournament size)
+        # print(f'contender: {contenders}') # list with index (length = tournament size)
         fitness = [parents[p].fitness_ for p in contenders]
         if metric.greater_is_better:
             parent_index = contenders[np.argmax(fitness)]
@@ -82,8 +84,9 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     # Build programs
     programs = []
 
+    pickle_trees.clear()
     for i in range(n_programs):
-        print(f'The {i}th program!!!')
+        # print(f'The {i}th program!!!')
     
         # with open("knn_data.csv", "a", newline="") as csvfile:
         #     writer = csv.writer(csvfile)
@@ -179,7 +182,9 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
             program.oob_fitness_ = program.raw_fitness_ # 12/29 Wierd
 
         programs.append(program)
-
+    # print(f'pickle trees length: {len(pickle_trees)}')
+    main()
+    
     return programs
 
 

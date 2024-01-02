@@ -19,8 +19,8 @@ from sklearn.utils.random import sample_without_replacement
 from .functions import _Function
 from .utils import check_random_state
 import mystr
-
 import pickle
+
 global pickle_trees
 pickle_trees = []
 class _Program(object):
@@ -403,12 +403,11 @@ class _Program(object):
             stack = 1
             end = start
             while stack > end - start:
-                # print(stack, start, end)
                 node2 = program[end]
                 if isinstance(node2, _Function):
                     stack += node2.arity
                 end += 1
-            # print(start, end)
+
                 
             if isinstance(program[i], _Function):
                 subprogram = program[start:end]
@@ -426,10 +425,6 @@ class _Program(object):
             pickle_tree.append(end)       
             pickle_trees.append(pickle_tree)
 
-        print(f'pickle trees length: {len(pickle_trees)}')
-        with open("knn_data.pkl", "wb") as pklfile:
-            print(f'now pickle trees length: {len(pickle_trees)}')
-            pickle.dump(pickle_trees, pklfile)
 
         # Check for single-node programs
         node = self.program[0]
@@ -536,7 +531,9 @@ class _Program(object):
             The raw fitness of the program.
 
         """
+        # print("in _program 538")
         y_pred = self.execute(X)
+        # print("out _program 540")
         # print(f'subtree: {self}')
         if self.transformer:
             y_pred = self.transformer(y_pred)
@@ -607,8 +604,7 @@ class _Program(object):
 
     # Mine
     def get_subtree_bounds(self, start, program):
-        print("program: ", mystr.mystr(program))
-        print("program:", program)
+        # print("program: ", mystr.mystr(program))
         stack = 1
         end = start
         while stack > end - start:
@@ -616,13 +612,14 @@ class _Program(object):
             if isinstance(node, _Function):
                 stack += node.arity
             end += 1
+        # print("end:", end)
         return end
 
         """
         program_index start end output
 
         """
-    def get_my_donor(self, program, k = 5):
+    def get_my_donor(self, program, k = 10):
         with open("knn_data.pkl", "rb") as pklfile:
             pickle_trees = pickle.load(pklfile)
         """
@@ -651,12 +648,21 @@ class _Program(object):
                     print("program: ", mystr.mystr(program))
                     print("i: ", i)
                 random_num = np.random.randint(-k, k)
-                print("random_num: ", random_num)
+                # print("random_num: ", random_num)
                 if random_num == 0:
                     random_num = 1
                 donor_index = i + random_num
+                # print("donor_index: ", donor_index)
+                if donor_index >= len(pickle_trees):
+                    donor_index = len(pickle_trees) - 1
+                elif donor_index < 0:
+                    donor_index = 0
                 donor_list = pickle_trees[donor_index]
-                donor_tree, donor_start, donor_end = donor_list
+                donor_tree, donor_start, donor_end, _ = donor_list
+                if DEBUG:
+                    print("donor", donor_list)
+                    print("donor_index: ", donor_index)
+                    print("donor_tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
                 return donor_tree, donor_start, donor_end
             else:
                 continue
@@ -666,13 +672,15 @@ class _Program(object):
         
     
     def get_left_right_subtree(self, program, node_index):
-        print("program: ", mystr.mystr(program))
-        print("node_index: ", node_index)
+        # print("program: ", mystr.mystr(program))
+        # print("node_index: ", node_index)
         # 確保節點是函數且至少有一個子節點
         node = program[node_index]
         if isinstance(node, _Function) and node.arity > 0:
             left_start = node_index + 1
             left_end = self.get_subtree_bounds(left_start, program)
+            # print("left_start: ", left_start)
+            # print("left_end: ", left_end)
         else:
             left_start = None
             left_end = None
@@ -681,11 +689,13 @@ class _Program(object):
             # 右子樹從左子樹結束的下一個元素開始
             right_start = left_end 
             right_end = self.get_subtree_bounds(right_start, program)
+            # print("right_start: ", right_start)
+            # print("right_end: ", right_end)
         else:
             right_start = None
             right_end = None
 
-            return left_start, left_end, right_start, right_end
+        return left_start, left_end, right_start, right_end
 
 
     def crossover(self, donor, random_state):
@@ -710,44 +720,55 @@ class _Program(object):
 
         """
         start, end = self.get_subtree(random_state)
-        print("start: ", start)
-        print("end: ", end)
+        # print("reciever_start: ", start)
+        # print("reciever_end: ", end)
         removed = range(start, end)
         removed_program = self.program[start:end]
-        print("program: ", mystr.mystr(self.program))
-        print("removed_program: ", mystr.mystr(removed_program))
+        # print("program: ", mystr.mystr(self.program))
+        # print("removed_program: ", mystr.mystr(removed_program))
         # Get a subtree to donate
         donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
-        print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
-        print("tmp_program: ", mystr.mystr(tmp_program))
+        # print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
+        i = 0 
         while True:
-            
+            # print("Start_while--------------------------------------------")
+            # print("tmp_program: ", mystr.mystr(tmp_program))
             # if the node is a leaf, break
             if not isinstance(tmp_program[start], _Function):
+                # print("tmp_program[start]: ", tmp_program[start])
                 break
             # TODO : Use Monte Carlo tree search (MCTS) to decide the direction
             direction = random.choice(['left', 'right'])
             try :
                 left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
-            except:
+                # print("left_subtree: ", mystr.mystr(tmp_program[left_start:left_end]))
+                # print("right_subtree: ", mystr.mystr(tmp_program[right_start:right_end]))
+            except Exception as e:
                 # 如果無法取得有效的子樹，終止迴圈
+                print("Except:", e)
+                print("End_while--------------------------------------------")
                 break
             if direction == 'left' and left_start is not None:
                 start, end = left_start, left_end
             elif direction == 'right' and right_start is not None:
                 start, end = right_start, right_end
+            else :
+                break
             removed_program = tmp_program[start:end]
+            # print("removed_program: ", mystr.mystr(removed_program))
+
             # Get a subtree to donate
             donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
-            donor_removed = list(set(range(len(donor_tree))) -
+            donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
-            tmp_program = (tmp_program[:start] + donor + tmp_program[end:])
-
-
+            tmp_program = (tmp_program[:start] + donor_tree.program[donor_start:donor_end] + tmp_program[end:])
+            # if i == 3:
+            #     break
+            # i += 1
         return tmp_program, removed, donor_removed
 
         # # Get a subtree to replace
