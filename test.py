@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 from sympy import solve
-from gplearn_1227.functions import _Function
+from gplearn_1230.functions import _Function
 
 with open("knn_data.pkl", "rb") as pklfile:
     read = pickle.load(pklfile)

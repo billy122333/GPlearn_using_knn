@@ -424,9 +424,9 @@ class _Program(object):
             pickle_tree.append(end)       
             pickle_trees.append(pickle_tree)
 
-        print(f'pickle trees length: {len(pickle_trees)}')
+        # print(f'pickle trees length: {len(pickle_trees)}')
         with open("knn_data.pkl", "wb") as pklfile:
-            print(f'now pickle trees length: {len(pickle_trees)}')
+            # print(f'now pickle trees length: {len(pickle_trees)}')
             pickle.dump(pickle_trees, pklfile)
 
             #  import csv

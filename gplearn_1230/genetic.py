@@ -67,7 +67,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     def _tournament():
         """Find the fittest individual from a sub-population."""
         contenders = random_state.randint(0, len(parents), tournament_size)
-        print(f'contender: {contenders}') # list with index (length = tournament size)
+        # print(f'contender: {contenders}') # list with index (length = tournament size)
         fitness = [parents[p].fitness_ for p in contenders]
         if metric.greater_is_better:
             parent_index = contenders[np.argmax(fitness)]
@@ -83,7 +83,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
     programs = []
 
     for i in range(n_programs):
-        print(f'The {i}th program!!!')
+        # print(f'The {i}th program!!!')
     
         # with open("knn_data.csv", "a", newline="") as csvfile:
         #     writer = csv.writer(csvfile)
@@ -311,7 +311,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
             Returns self.
 
         """
-        print(f'gen: {self.generations}')
+        print(f'gen: {self.generations}')        
         random_state = check_random_state(self.random_state)
 
         # Check arrays
@@ -468,6 +468,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                  'generation_time': []}
 
         prior_generations = len(self._programs)
+        # print(f'prior generation: {prior_generations}')
         n_more_generations = self.generations - prior_generations
 
         if n_more_generations < 0:
@@ -488,8 +489,23 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
         if self.verbose:
             # Print header fields
             self._verbose_reporter()
-
+    
         for gen in range(prior_generations, self.generations):
+
+            # print(f'Generation {gen}...')
+
+            # # delete the pickle file of former generation
+            # import os
+            # # Specify the path to the pickle file
+            # file_path = "knn_data.pkl"
+
+            # # Check if the file exists before attempting to delete it
+            # if os.path.exists(file_path):
+            #     # Delete the pickle file
+            #     os.remove(file_path)
+            #     print(f"The file {file_path} has been deleted.")
+            # else:
+            #     print(f"The file {file_path} does not exist.")
 
             start_time = time()
 
