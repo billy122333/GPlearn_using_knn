@@ -1,14 +1,10 @@
 import pickle
 import numpy as np
 from sympy import solve
-from gplearn_1227.functions import _Function
+from gplearn_1230.functions import _Function
 
 with open("knn_data.pkl", "rb") as pklfile:
     read = pickle.load(pklfile)
-    # print(read)
-    # print(len(read))
-# print(len(read))
-# print(read[-1])
 
 # turn gp expression into a readable expression
 def mystr(program):
@@ -61,19 +57,9 @@ for i in range(len(read)):
         y = eval(subtrees)
         y_data.append(y)
     y_avg = np.average(np.array(y_data))
-    read[i].append(y_avg)
-    
-# print(read[0])
-# print(len(read))
-# for p, s, e in enumerate(read):
-# [[],[],[]]
-# print(type(read))
-# for i in range(len(read)):
-    # print(read[i])
-    # print(read[i][0])
-    # print(type(read[i][0]))
-    # print((read[i][0].program[read[i][1]:read[i][2]]).execute(X_train))
-    # print(read[i][0].execute(X_train))
+    read[i].append(y_avg)   
 
 sorted_read = sorted(read, key= lambda p: p[3])
+with open("knn_data.pkl", "wb") as pklfile:
+    pickle.dump(read, pklfile)
 # print(sorted_read[0:5])
