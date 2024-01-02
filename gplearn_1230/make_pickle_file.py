@@ -1,10 +1,9 @@
 import pickle
 import numpy as np
 from sympy import solve
-from gplearn_1230.functions import _Function
+from ._program import pickle_trees
+from .functions import _Function
 
-with open("knn_data.pkl", "rb") as pklfile:
-    read = pickle.load(pklfile)
 
 # turn gp expression into a readable expression
 def mystr(program):
@@ -39,27 +38,28 @@ def div(x, y):
     if abs(float(y)) <= 1e-3:
         return 1.0
     return x / y
-converter = {'sub' : lambda x, y : x - y,
-            'div' : lambda x, y : solve(x, y),
-            'mul' : lambda x, y : x * y,
-            'add' : lambda x, y : x + y}
 
-X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
-y_train = X_train**3 + X_train**2 + X_train  
-for i in range(len(read)):
-    subtrees = read[i][0].program[read[i][1]:read[i][2]]
-    subtrees = mystr(subtrees)
-    # print(mystr(subtrees))
-    # subtrees =', '.join(subtrees)
-    y_data = []
-    for j in range(200):
-        X0 = X_train[j][0]
-        y = eval(subtrees)
-        y_data.append(y)
-    y_avg = np.average(np.array(y_data))
-    read[i].append(y_avg)   
+def main():
+    # print("start")
+    X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
+    y_train = X_train**3 + X_train**2 + X_train  
+    for i in range(len(pickle_trees)):
+        subtrees = pickle_trees[i][0].program[pickle_trees[i][1]:pickle_trees[i][2]]
+        subtrees = mystr(subtrees)
+        y_data = []
+        for j in range(200):
+            X0 = X_train[j][0]
+            y = eval(subtrees)
+            y_data.append(y)
+        y_avg = np.average(np.array(y_data))
+        pickle_trees[i].append(y_avg)   
 
-sorted_read = sorted(read, key= lambda p: p[3])
-with open("knn_data.pkl", "wb") as pklfile:
-    pickle.dump(read, pklfile)
-# print(sorted_read[0:5])
+    sorted_pickle_trees = sorted(pickle_trees, key= lambda p: p[3])
+    # print(sorted_pickle_trees[0])
+    # print(sorted_pickle_trees[1])
+    # print(sorted_pickle_trees[2])
+    # print(sorted_pickle_trees[3])
+    with open("knn_data.pkl", "wb") as pklfile:
+        # print("len(sorted_pickle_trees): ", len(sorted_pickle_trees))
+        pickle.dump(sorted_pickle_trees, pklfile)
+

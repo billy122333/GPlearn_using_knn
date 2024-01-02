@@ -19,12 +19,12 @@ def main():
     y_train = y_train.ravel()
 
     est_gp = SymbolicRegressor(population_size=100,
-                            generations=5, stopping_criteria=1e-5,
-                            p_crossover=0.7, p_subtree_mutation=0.1,
-                            p_hoist_mutation=0.05, p_point_mutation=0.1,
+                            generations=20, stopping_criteria=1e-5,
+                            p_crossover=0.8, p_subtree_mutation=0.0,
+                            p_hoist_mutation=0.0, p_point_mutation=0.0,
                             max_samples=0.9, verbose=1,
-                            parsimony_coefficient=0.01, random_state=0
-                            # random_state=random.seed(datetime.datetime.now().timestamp())
+                            parsimony_coefficient=0.01,
+                            random_state=random.seed(datetime.datetime.now().timestamp())
                             )
                             
     est_gp.fit(X_train, y_train)
