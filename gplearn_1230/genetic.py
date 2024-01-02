@@ -492,18 +492,19 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
     
         for gen in range(prior_generations, self.generations):
 
-            # print(f'Generation {gen}...')
+            print(f'Generation {gen}........................')
 
-            # # delete the pickle file of former generation
+            # delete the pickle file of former generation
             # import os
             # # Specify the path to the pickle file
             # file_path = "knn_data.pkl"
 
+            # import pickle
             # # Check if the file exists before attempting to delete it
             # if os.path.exists(file_path):
-            #     # Delete the pickle file
-            #     os.remove(file_path)
-            #     print(f"The file {file_path} has been deleted.")
+            #     with open("knn_data.pkl", "rb") as pklfile:
+            #         pickle_trees = pickle.load(pklfile)
+            #     print(f'pickle trees length: {len(pickle_trees)}')
             # else:
             #     print(f"The file {file_path} does not exist.")
 

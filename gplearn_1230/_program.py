@@ -607,8 +607,8 @@ class _Program(object):
 
     # Mine
     def get_subtree_bounds(self, start, program):
-        print("program: ", mystr.mystr(program))
-        print("program:", program)
+        # print("program: ", mystr.mystr(program))
+        # print("program:", program)
         stack = 1
         end = start
         while stack > end - start:
@@ -651,7 +651,7 @@ class _Program(object):
                     print("program: ", mystr.mystr(program))
                     print("i: ", i)
                 random_num = np.random.randint(-k, k)
-                print("random_num: ", random_num)
+                # print("random_num: ", random_num)
                 if random_num == 0:
                     random_num = 1
                 donor_index = i + random_num
@@ -666,13 +666,15 @@ class _Program(object):
         
     
     def get_left_right_subtree(self, program, node_index):
-        print("program: ", mystr.mystr(program))
-        print("node_index: ", node_index)
+        # print("program: ", mystr.mystr(program))
+        # print("node_index: ", node_index)
         # 確保節點是函數且至少有一個子節點
         node = program[node_index]
         if isinstance(node, _Function) and node.arity > 0:
             left_start = node_index + 1
+            # print(f'left start: {left_start}')
             left_end = self.get_subtree_bounds(left_start, program)
+            # print(f'left end: {left_end}')
         else:
             left_start = None
             left_end = None
@@ -680,7 +682,9 @@ class _Program(object):
         if isinstance(node, _Function) and node.arity == 2:
             # 右子樹從左子樹結束的下一個元素開始
             right_start = left_end 
+            # print(f'right start: {right_start}')
             right_end = self.get_subtree_bounds(right_start, program)
+            # print(f'right end: {right_end}')
         else:
             right_start = None
             right_end = None
@@ -710,42 +714,55 @@ class _Program(object):
 
         """
         start, end = self.get_subtree(random_state)
-        print("start: ", start)
-        print("end: ", end)
+        # print("start: ", start)
+        # print("end: ", end)
         removed = range(start, end)
         removed_program = self.program[start:end]
-        print("program: ", mystr.mystr(self.program))
-        print("removed_program: ", mystr.mystr(removed_program))
+        # print("program: ", mystr.mystr(self.program))
+        # print("removed_program: ", mystr.mystr(removed_program))
         # Get a subtree to donate
         donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
-        print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
-        print("tmp_program: ", mystr.mystr(tmp_program))
+        # print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
+        # print("tmp_program: ", mystr.mystr(tmp_program))
         while True:
-            
+            # print("inside the while loop")
             # if the node is a leaf, break
             if not isinstance(tmp_program[start], _Function):
                 break
             # TODO : Use Monte Carlo tree search (MCTS) to decide the direction
             direction = random.choice(['left', 'right'])
+            # print(f'direction: {direction}')
+            # left_start, left_end, right_start, right_end = None, None, None, None
             try :
                 left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
+                # print(f'left start: {left_start}')
+                # print(f'left end: {left_end}')
+                # print(f'right start: {right_start}')
+                # print(f'right end: {right_end}')
             except:
                 # 如果無法取得有效的子樹，終止迴圈
                 break
             if direction == 'left' and left_start is not None:
                 start, end = left_start, left_end
+                # print(f'go left and start: {start}')
+                # print(f'go left and end: {end}')
             elif direction == 'right' and right_start is not None:
                 start, end = right_start, right_end
+                # print(f'go right and start: {start}')
+                # print(f'go right and end: {end}')
+            else:
+                break
             removed_program = tmp_program[start:end]
             # Get a subtree to donate
             donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
             donor_removed = list(set(range(len(donor_tree))) -
                              set(range(donor_start, donor_end)))
             tmp_program = (tmp_program[:start] + donor + tmp_program[end:])
+            print("tmp_program: ", mystr.mystr(tmp_program))
 
 
         return tmp_program, removed, donor_removed
