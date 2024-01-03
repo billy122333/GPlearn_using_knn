@@ -28,7 +28,7 @@ from .functions import _function_map, _Function, sig1 as sigmoid
 from .utils import _partition_estimators
 from .utils import check_random_state
 
-from .make_pickle_file import main
+from .package.make_pickle_file import make_pickle_file
 from ._program import pickle_trees
 
 __all__ = ['SymbolicRegressor', 'SymbolicClassifier', 'SymbolicTransformer']
@@ -183,7 +183,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
 
         programs.append(program)
     # print(f'pickle trees length: {len(pickle_trees)}')
-    main()
+    make_pickle_file()
     
     return programs
 
@@ -294,6 +294,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                      run_details['best_fitness'][-1],
                                      oob_fitness,
                                      remaining_time))
+            
 
     def fit(self, X, y, sample_weight=None):
         """Fit the Genetic Program according to X, y.

@@ -18,7 +18,7 @@ from sklearn.utils.random import sample_without_replacement
 
 from .functions import _Function
 from .utils import check_random_state
-import mystr
+from .package.mystr import mystr 
 import pickle
 
 global pickle_trees
@@ -643,7 +643,7 @@ class _Program(object):
 
             # It would return false because of the different memory address
             # if (program) == (subtree[0].program[start:end]): 
-            if mystr.mystr(program) == mystr.mystr(subtree[0].program[start:end]):
+            if mystr(program) == mystr(subtree[0].program[start:end]):
                 if DEBUG:
                     print("found in str ----------------------------------------")
                     print("program: ", mystr.mystr(program))
