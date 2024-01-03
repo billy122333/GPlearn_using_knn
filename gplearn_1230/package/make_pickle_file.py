@@ -1,8 +1,8 @@
 import pickle
 import numpy as np
 from sympy import solve
-from ._program import pickle_trees
-from .functions import _Function
+from .._program import pickle_trees
+from ..functions import _Function
 
 
 # turn gp expression into a readable expression
@@ -39,7 +39,7 @@ def div(x, y):
         return 1.0
     return x / y
 
-def main():
+def make_pickle_file():
     # print("start")
     X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
     y_train = X_train**3 + X_train**2 + X_train  

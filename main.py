@@ -1,21 +1,23 @@
 from gplearn_1230.genetic import SymbolicRegressor
 from gplearn_1230.functions import _Function
 
-import time
-import os
-import shutil
 import random
 import time
 import datetime
 import multiprocessing as mp
 import numpy as np
-import matplotlib.pyplot as plt
+import sys
 
 def main():
 
     # Nguyen-1
     X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
-    y_train = X_train**3 + X_train**2 + X_train  
+    if len(sys.argv) < 2:
+        print('Usage: python backup_gp_run.py <y_train>')
+        y_train = X_train**3 + X_train**2 + X_train  
+    # y_train = 6.87 + 11*math.cos(7.23*X_train)
+    # y_train = math.sqrt(X_train)
+    y_train = eval(sys.argv[1])
     y_train = y_train.ravel()
 
     est_gp = SymbolicRegressor(population_size=100,
