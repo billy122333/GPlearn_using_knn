@@ -42,7 +42,7 @@ def div(x, y):
 def main():
     # print("start")
     X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
-    y_train = X_train**3 + X_train**2 + X_train  
+    # y_train = X_train**3 + X_train**2 + X_train  
     for i in range(len(pickle_trees)):
         subtrees = pickle_trees[i][0].program[pickle_trees[i][1]:pickle_trees[i][2]]
         subtrees = mystr(subtrees)
@@ -59,7 +59,7 @@ def main():
     # print(sorted_pickle_trees[1])
     # print(sorted_pickle_trees[2])
     # print(sorted_pickle_trees[3])
+    pickle_name = "knn_data" + str() + ".pkl"
     with open("knn_data.pkl", "wb") as pklfile:
         # print("len(sorted_pickle_trees): ", len(sorted_pickle_trees))
         pickle.dump(sorted_pickle_trees, pklfile)
-
