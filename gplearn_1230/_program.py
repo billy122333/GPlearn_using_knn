@@ -720,23 +720,18 @@ class _Program(object):
 
         """
         start, end = self.get_subtree(random_state)
-        # print("reciever_start: ", start)
-        # print("reciever_end: ", end)
+
         removed = range(start, end)
         removed_program = self.program[start:end]
-        # print("program: ", mystr.mystr(self.program))
-        # print("removed_program: ", mystr.mystr(removed_program))
+
         # Get a subtree to donate
         donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
-        # print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
-        i = 0 
+
         while True:
-            # print("Start_while--------------------------------------------")
-            # print("tmp_program: ", mystr.mystr(tmp_program))
             # if the node is a leaf, break
             if not isinstance(tmp_program[start], _Function):
                 # print("tmp_program[start]: ", tmp_program[start])
@@ -745,8 +740,6 @@ class _Program(object):
             direction = random.choice(['left', 'right'])
             try :
                 left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
-                # print("left_subtree: ", mystr.mystr(tmp_program[left_start:left_end]))
-                # print("right_subtree: ", mystr.mystr(tmp_program[right_start:right_end]))
             except Exception as e:
                 # 如果無法取得有效的子樹，終止迴圈
                 print("Except:", e)
@@ -759,16 +752,12 @@ class _Program(object):
             else :
                 break
             removed_program = tmp_program[start:end]
-            # print("removed_program: ", mystr.mystr(removed_program))
 
             # Get a subtree to donate
             donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
             donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
             tmp_program = (tmp_program[:start] + donor_tree.program[donor_start:donor_end] + tmp_program[end:])
-            # if i == 3:
-            #     break
-            # i += 1
         return tmp_program, removed, donor_removed
 
         # # Get a subtree to replace
