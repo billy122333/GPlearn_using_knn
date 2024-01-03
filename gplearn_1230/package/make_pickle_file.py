@@ -39,7 +39,7 @@ def div(x, y):
         return 1.0
     return x / y
 
-def make_pickle_file():
+def make_pickle_file(index):
     # print("start")
     X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
     # y_train = X_train**3 + X_train**2 + X_train  
@@ -59,7 +59,7 @@ def make_pickle_file():
     # print(sorted_pickle_trees[1])
     # print(sorted_pickle_trees[2])
     # print(sorted_pickle_trees[3])
-    pickle_name = "knn_data" + str() + ".pkl"
-    with open("knn_data.pkl", "wb") as pklfile:
+    # pickle_name = "knn_data" + str(index) + ".pkl"
+    with open(f"knn_data{index}.pkl", "wb") as pklfile:
         # print("len(sorted_pickle_trees): ", len(sorted_pickle_trees))
         pickle.dump(sorted_pickle_trees, pklfile)

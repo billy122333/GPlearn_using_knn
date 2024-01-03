@@ -620,8 +620,8 @@ class _Program(object):
         program_index start end output
 
         """
-    def get_my_donor(self, program, k = 10):
-        with open("knn_data.pkl", "rb") as pklfile:
+    def get_my_donor(self, program, index, k = 10):
+        with open(f"knn_data{index}.pkl", "rb") as pklfile:
             pickle_trees = pickle.load(pklfile)
         """
         [[program, start, end],...]
@@ -698,8 +698,7 @@ class _Program(object):
 
         return left_start, left_end, right_start, right_end
 
-
-    def crossover(self, donor, random_state):
+    def crossover(self, donor, random_state, index):
         """Perform the crossover genetic operation on the program.
 
         Crossover selects a random subtree from the embedded program to be
@@ -728,7 +727,7 @@ class _Program(object):
         # print("program: ", mystr.mystr(self.program))
         # print("removed_program: ", mystr.mystr(removed_program))
         # Get a subtree to donate
-        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
+        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
@@ -767,7 +766,7 @@ class _Program(object):
             # print("removed_program: ", mystr.mystr(removed_program))
 
             # Get a subtree to donate
-            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
+            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)
             donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
             tmp_program = (tmp_program[:start] + donor_tree.program[donor_start:donor_end] + tmp_program[end:])
