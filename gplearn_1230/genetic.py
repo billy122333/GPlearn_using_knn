@@ -40,8 +40,7 @@ MAX_INT = np.iinfo(np.int32).max
 #         writer = csv.writer(csvfile)
 #         # writer.writerow(['Subprogram'])
 
-
-def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
+def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, index):
     """Private function used to build a batch of programs within a job."""
     n_samples, n_features = X.shape
     # Unpack parameters
@@ -114,7 +113,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
                 # print(donor)
                 # print(donor_index)
                 program, removed, remains = parent.crossover(donor.program,
-                                                             random_state)
+                                                             random_state, index)
                 genome = {'method': 'Crossover',
                           'parent_idx': parent_index,
                           'parent_nodes': removed,
@@ -183,7 +182,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params):
 
         programs.append(program)
     # print(f'pickle trees length: {len(pickle_trees)}')
-    make_pickle_file()
+    make_pickle_file(index)
     
     return programs
 
@@ -296,7 +295,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                      remaining_time))
             
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, index, sample_weight=None):
         """Fit the Genetic Program according to X, y.
 
         Parameters
@@ -317,7 +316,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
             Returns self.
 
         """
-        print(f'gen: {self.generations}')
+        print(f'gen: {self.generations}')        
         random_state = check_random_state(self.random_state)
 
         # Check arrays
@@ -474,6 +473,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                  'generation_time': []}
 
         prior_generations = len(self._programs)
+        # print(f'prior generation: {prior_generations}')
         n_more_generations = self.generations - prior_generations
 
         if n_more_generations < 0:
@@ -494,8 +494,24 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
         if self.verbose:
             # Print header fields
             self._verbose_reporter()
-
+    
         for gen in range(prior_generations, self.generations):
+
+            print(f'Generation {gen}........................')
+
+            # delete the pickle file of former generation
+            # import os
+            # # Specify the path to the pickle file
+            # file_path = "knn_data.pkl"
+
+            # import pickle
+            # # Check if the file exists before attempting to delete it
+            # if os.path.exists(file_path):
+            #     with open("knn_data.pkl", "rb") as pklfile:
+            #         pickle_trees = pickle.load(pklfile)
+            #     print(f'pickle trees length: {len(pickle_trees)}')
+            # else:
+            #     print(f"The file {file_path} does not exist.")
 
             start_time = time()
 
@@ -517,7 +533,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                           y,
                                           sample_weight,
                                           seeds[starts[i]:starts[i + 1]],
-                                          params)
+                                          params, index)
                 for i in range(n_jobs))
 
             # Reduce, maintaining order across different n_jobs

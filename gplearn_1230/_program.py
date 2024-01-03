@@ -605,6 +605,7 @@ class _Program(object):
     # Mine
     def get_subtree_bounds(self, start, program):
         # print("program: ", mystr.mystr(program))
+        # print("program:", program)
         stack = 1
         end = start
         while stack > end - start:
@@ -619,8 +620,8 @@ class _Program(object):
         program_index start end output
 
         """
-    def get_my_donor(self, program, k = 10):
-        with open("knn_data.pkl", "rb") as pklfile:
+    def get_my_donor(self, program, index, k = 10):
+        with open(f"knn_data{index}.pkl", "rb") as pklfile:
             pickle_trees = pickle.load(pklfile)
         """
         [[program, start, end],...]
@@ -678,9 +679,9 @@ class _Program(object):
         node = program[node_index]
         if isinstance(node, _Function) and node.arity > 0:
             left_start = node_index + 1
+            # print(f'left start: {left_start}')
             left_end = self.get_subtree_bounds(left_start, program)
-            # print("left_start: ", left_start)
-            # print("left_end: ", left_end)
+            # print(f'left end: {left_end}')
         else:
             left_start = None
             left_end = None
@@ -688,17 +689,16 @@ class _Program(object):
         if isinstance(node, _Function) and node.arity == 2:
             # 右子樹從左子樹結束的下一個元素開始
             right_start = left_end 
+            # print(f'right start: {right_start}')
             right_end = self.get_subtree_bounds(right_start, program)
-            # print("right_start: ", right_start)
-            # print("right_end: ", right_end)
+            # print(f'right end: {right_end}')
         else:
             right_start = None
             right_end = None
 
         return left_start, left_end, right_start, right_end
 
-
-    def crossover(self, donor, random_state):
+    def crossover(self, donor, random_state, index):
         """Perform the crossover genetic operation on the program.
 
         Crossover selects a random subtree from the embedded program to be
@@ -720,12 +720,13 @@ class _Program(object):
 
         """
         start, end = self.get_subtree(random_state)
-
+        # print("start: ", start)
+        # print("end: ", end)
         removed = range(start, end)
         removed_program = self.program[start:end]
 
         # Get a subtree to donate
-        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)  
+        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
@@ -738,6 +739,8 @@ class _Program(object):
                 break
             # TODO : Use Monte Carlo tree search (MCTS) to decide the direction
             direction = random.choice(['left', 'right'])
+            # print(f'direction: {direction}')
+            # left_start, left_end, right_start, right_end = None, None, None, None
             try :
                 left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
             except Exception as e:
@@ -747,6 +750,8 @@ class _Program(object):
                 break
             if direction == 'left' and left_start is not None:
                 start, end = left_start, left_end
+                # print(f'go left and start: {start}')
+                # print(f'go left and end: {end}')
             elif direction == 'right' and right_start is not None:
                 start, end = right_start, right_end
             else :
@@ -754,7 +759,7 @@ class _Program(object):
             removed_program = tmp_program[start:end]
 
             # Get a subtree to donate
-            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program)
+            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)
             donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
             tmp_program = (tmp_program[:start] + donor_tree.program[donor_start:donor_end] + tmp_program[end:])

@@ -13,11 +13,14 @@ def main():
     # Nguyen-1
     X_train = np.arange(-1, 1, 0.01).reshape(200, 1)
     if len(sys.argv) < 2:
-        print('Usage: python backup_gp_run.py <y_train>')
+        print('Usage: python backup_gp_run.py <X_train> <index>')
         y_train = X_train**3 + X_train**2 + X_train  
+        index = 1
     # y_train = 6.87 + 11*math.cos(7.23*X_train)
     # y_train = math.sqrt(X_train)
-    y_train = eval(sys.argv[1])
+    else:
+        y_train = eval(sys.argv[1])
+        index = int(sys.argv[2])
     y_train = y_train.ravel()
 
     est_gp = SymbolicRegressor(population_size=100,
@@ -29,7 +32,7 @@ def main():
                             random_state=random.seed(datetime.datetime.now().timestamp())
                             )
                             
-    est_gp.fit(X_train, y_train)
+    est_gp.fit(X_train, y_train, index)
     result = est_gp
     # print(f'result: {result}')
     best_fitness = min(result.run_details_['best_fitness'])
