@@ -59,17 +59,13 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
     feature_names = params['feature_names']
 
     max_samples = int(max_samples * n_samples)
-
-    def get_neighbor_index():
-        # return parents[parent_index], parent_index
-        pass
-        
     
     def _tournament():
         """Find the fittest individual from a sub-population."""
         contenders = random_state.randint(0, len(parents), tournament_size)
         # print(f'contender: {contenders}') # list with index (length = tournament size)
         fitness = [parents[p].fitness_ for p in contenders]
+        # print(f'fitness: {fitness}')
         if metric.greater_is_better:
             parent_index = contenders[np.argmax(fitness)]
             # print(f'parent index: {parent_index}')
