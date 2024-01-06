@@ -40,7 +40,7 @@ MAX_INT = np.iinfo(np.int32).max
 #         writer = csv.writer(csvfile)
 #         # writer.writerow(['Subprogram'])
 
-def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, index):
+def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, index, gen):
     """Private function used to build a batch of programs within a job."""
     n_samples, n_features = X.shape
     # Unpack parameters
@@ -60,10 +60,6 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
 
     max_samples = int(max_samples * n_samples)
 
-    def get_neighbor_index():
-        # return parents[parent_index], parent_index
-        pass
-        
     
     def _tournament():
         """Find the fittest individual from a sub-population."""
@@ -107,13 +103,14 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
 
             if method < method_probs[0]:
                 # crossover
+                # TODO : In gplearn Using tourament selection to find the donor
                 donor, donor_index = _tournament() # tournament selection
                 # print(type(donor))
                 # print(type(donor_index))
                 # print(donor)
                 # print(donor_index)
-                program, removed, remains = parent.crossover(donor.program,
-                                                             random_state, index)
+                program, removed, remains = parent.crossover(donor.program, X, y,  
+                                                             random_state, index, gen)
                 genome = {'method': 'Crossover',
                           'parent_idx': parent_index,
                           'parent_nodes': removed,
@@ -533,7 +530,7 @@ class BaseSymbolic(BaseEstimator, metaclass=ABCMeta):
                                           y,
                                           sample_weight,
                                           seeds[starts[i]:starts[i + 1]],
-                                          params, index)
+                                          params, index, gen)
                 for i in range(n_jobs))
 
             # Reduce, maintaining order across different n_jobs

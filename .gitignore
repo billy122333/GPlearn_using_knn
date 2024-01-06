@@ -172,5 +172,7 @@ knn_data_y_sorted.csv
 my_knn.py
 
 test_scripts/*
+
+# Output files
 output/*
 *.pkl
