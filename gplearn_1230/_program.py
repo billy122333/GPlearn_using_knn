@@ -360,35 +360,10 @@ class _Program(object):
 
         """
 
-        # turn gp expression into a readable expression
-        def mystr(program):
-            """Overloads `print` output of the object to resemble a LISP tree."""
-            terminals = [0]
-            output = ''
-            for i, node in enumerate(program):
-                if isinstance(node, _Function):
-                    terminals.append(node.arity)
-                    output += node.name + '('
-                else:
-                    if isinstance(node, int):
-                        output += 'X%s' % node
-                    else:
-                        output += '%.3f' % node
-                    terminals[-1] -= 1
-                    while terminals[-1] == 0:
-                        terminals.pop()
-                        terminals[-1] -= 1
-                        output += ')'
-                    if i != len(program) - 1:
-                        output += ', '
-            return output
-        # print(f'the {i}th program')
-        # print(f'program length: {len(self.program)}')
-
         if program is None:
             program = self.program
         else:
-            print("I have a program")
+            print("Not self.program!")
 
         # pickle_trees = []
 
@@ -620,6 +595,35 @@ class _Program(object):
         program_index start end output
 
         """
+
+    def if_validate(self, program_list):
+        """Rough check that the embedded program in the object is valid."""
+        terminals = [0]
+        for node in program_list:
+            if isinstance(node, _Function):
+                terminals.append(node.arity)
+            else:
+                terminals[-1] -= 1
+                while terminals[-1] == 0:
+                    terminals.pop()
+                    terminals[-1] -= 1
+        return terminals == [-1]
+    
+    def mydepth(self, program_list):
+        """Calculates the maximum depth of the program tree."""
+        terminals = [0]
+        depth = 1
+        for node in program_list:
+            if isinstance(node, _Function):
+                terminals.append(node.arity)
+                depth = max(len(terminals), depth)
+            else:
+                terminals[-1] -= 1
+                while terminals[-1] == 0:
+                    terminals.pop()
+                    terminals[-1] -= 1
+        return depth - 1
+    
     def get_my_donor(self, program, index, k = 10):
         with open(f"knn_data{index}.pkl", "rb") as pklfile:
             pickle_trees = pickle.load(pklfile)
@@ -629,8 +633,15 @@ class _Program(object):
         DEBUG = False
         for i in range(len(pickle_trees)) :
             subtree = pickle_trees[i]
+            # print(f'tree: {subtree[0]}')
+            # print(f'tree depth: {subtree[0]._depth()}')
             start = subtree[1]
             end = subtree[2]
+            # subtree_depth = pickle_trees[i][0].program[pickle_trees[i][1]:pickle_trees[i][2]]._depth()
+            # subtree_program = pickle_trees[i][0].program[start:end]
+            # print(subtree_program)
+            # print(f'subtree depth: {self.mydepth(subtree_program)}')
+
             # with open ("knn_data.csv", "a") as csvfile:
             #     csvfile.write(str(i))
             #     csvfile.write("\t")
@@ -667,10 +678,48 @@ class _Program(object):
                 return donor_tree, donor_start, donor_end
             else:
                 continue
-        
-
-       
-        
+    
+    def get_possible_donor(self, program, X_train, y_truth, Mode, index, k = 10):
+        if Mode == "Random":
+            RANDOM = True
+        else:
+            RANDOM = False
+        with open(f"knn_data{index}.pkl", "rb") as pklfile:
+            pickle_trees = pickle.load(pklfile)
+        """
+        [[program, start, end],...]
+        """
+        for i in range(len(pickle_trees)) :
+            subtree = pickle_trees[i]
+            start = subtree[1]
+            end = subtree[2]
+            if mystr(program) == mystr(subtree[0].program[start:end]):
+                # Random 取一個donor
+                if RANDOM :
+                    random_num = np.random.randint(-k, k)
+                    if random_num == 0:
+                        random_num = 1
+                    donor_index = i + random_num
+                    if donor_index >= len(pickle_trees):
+                        donor_index = len(pickle_trees) - 1
+                    elif donor_index < 0:
+                        donor_index = 0
+                    donor_list = pickle_trees[donor_index]
+                    return donor_list
+                else:
+                    # Touramnet selection
+                    # 先取一個list with k elements
+                    contenders = [random.randint(i-k, i+k) for _ in range(k)]
+                    # 防呆
+                    for idx in contenders:
+                        if idx < 0:
+                            contenders = [i+1 for i in range(k)]
+                        elif idx >= len(pickle_trees):
+                            contenders = [i-1 for i in range(k)]
+                    donor_list = [pickle_trees[contenders[i]] for i in range(k)]
+                    return donor_list    
+            else:
+                continue
     
     def get_left_right_subtree(self, program, node_index):
         # print("program: ", mystr.mystr(program))
@@ -698,7 +747,7 @@ class _Program(object):
 
         return left_start, left_end, right_start, right_end
 
-    def crossover(self, donor, random_state, index):
+    def crossover(self, donor, X_train, ground_truth_y, random_state, index, gen):
         """Perform the crossover genetic operation on the program.
 
         Crossover selects a random subtree from the embedded program to be
@@ -719,24 +768,44 @@ class _Program(object):
             The flattened tree representation of the program.
 
         """
+        
+        Mode = "Tournament"
+        # Using original crossover method when gen <= 5
+        if gen <= 1:
+            # Get a subtree to replace
+            start, end = self.get_subtree(random_state)
+            removed = range(start, end)
+            # Get a subtree to donate
+            donor_start, donor_end = self.get_subtree(random_state, donor)
+            # print(f'donor: {donor}')
+            donor_removed = list(set(range(len(donor))) -
+                                set(range(donor_start, donor_end)))
+            # Insert genetic material from donor
+            return (self.program[:start] +
+                    donor[donor_start:donor_end] +
+                    self.program[end:]), removed, donor_removed   
+            
+        # Using my crossover method when gen > 5
+        # Get a subtree
+        # print(f'My method in gen: {gen}')
         start, end = self.get_subtree(random_state)
         # print("start: ", start)
         # print("end: ", end)
         removed = range(start, end)
         removed_program = self.program[start:end]
+        # print("removed program depth: ", self.mydepth(removed_program))
         # print("program: ", mystr.mystr(self.program))
         # print("removed_program: ", mystr.mystr(removed_program))
+        tmp_program, donor_removed = self.get_donor(removed_program, start, end, X_train, ground_truth_y, Mode, index)
         # Get a subtree to donate
-        donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)  
+        # donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)  
         # TODO : compare the fitness with original program (Opitimal mixing OM)
-        tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
-        donor_removed = list(set(range(len(donor_tree.program))) -
-                             set(range(donor_start, donor_end)))
+        # tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
+        # donor_removed = list(set(range(len(donor_tree.program))) -
+        #                      set(range(donor_start, donor_end)))
         # print("donor_Tree: ", mystr.mystr(donor_tree.program[donor_start:donor_end]))
-        i = 0 
+
         while True:
-            # print("Start_while--------------------------------------------")
-            # print("tmp_program: ", mystr.mystr(tmp_program))
             # if the node is a leaf, break
             if not isinstance(tmp_program[start], _Function):
                 # print("tmp_program[start]: ", tmp_program[start])
@@ -747,8 +816,6 @@ class _Program(object):
             # left_start, left_end, right_start, right_end = None, None, None, None
             try :
                 left_start, left_end, right_start, right_end = self.get_left_right_subtree(tmp_program, start)
-                # print("left_subtree: ", mystr.mystr(tmp_program[left_start:left_end]))
-                # print("right_subtree: ", mystr.mystr(tmp_program[right_start:right_end]))
             except Exception as e:
                 # 如果無法取得有效的子樹，終止迴圈
                 print("Except:", e)
@@ -763,16 +830,7 @@ class _Program(object):
             else :
                 break
             removed_program = tmp_program[start:end]
-            # print("removed_program: ", mystr.mystr(removed_program))
-
-            # Get a subtree to donate
-            donor_tree, donor_start, donor_end = self.get_my_donor(removed_program, index)
-            donor_removed = list(set(range(len(donor_tree.program))) -
-                             set(range(donor_start, donor_end)))
-            tmp_program = (tmp_program[:start] + donor_tree.program[donor_start:donor_end] + tmp_program[end:])
-            # if i == 3:
-            #     break
-            # i += 1
+            tmp_program, donor_removed = self.get_donor(removed_program, start, end, X_train, ground_truth_y, Mode, index)
         return tmp_program, removed, donor_removed
 
         # # Get a subtree to replace

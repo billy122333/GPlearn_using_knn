@@ -45,11 +45,18 @@ def make_pickle_file(index):
     # y_train = X_train**3 + X_train**2 + X_train  
     for i in range(len(pickle_trees)):
         subtrees = pickle_trees[i][0].program[pickle_trees[i][1]:pickle_trees[i][2]]
+        # print(subtrees)
         subtrees = mystr(subtrees)
+        # print(f'subtrees: {subtrees}')
         y_data = []
+        # print(X_train.shape) # (200, 1)
         for j in range(200):
             X0 = X_train[j][0]
+            # print(f'X0: {X0}')
+            # print(type(X0))
             y = eval(subtrees)
+            # print(f'y: {y}')
+            # print(type(y))
             y_data.append(y)
         y_avg = np.average(np.array(y_data))
         pickle_trees[i].append(y_avg)   
