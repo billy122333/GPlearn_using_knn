@@ -760,7 +760,7 @@ class _Program(object):
         return np.mean(np.abs(y_true - y_pred))
     
     def calculate_fitness_old(self, expression_list, X, y_true):
-        # 拿子豪的code來改的
+        # 拿梓豪的code來改的
         def add(x, y):
             return x + y
         def sub(x, y):
@@ -823,12 +823,6 @@ class _Program(object):
                     # print(len(self.program))
                     # print(start, end)
                     tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
-                    # TODO : 目前fitness的計算應該剩一點小問題， 但因為會出現sub(x0, 0.3), x0的狀況，所以會變成計算兩棵樹的fitneess使型態變成tuple，這裡要再修正一下
-                    # 主要就修正這個caculate_fitness的function 
-                    
-                    # 01/06: 我後來trace了一下 好像是遞迴的時候出事 start跟end變動的時候會導致無效樹
-                    # 我先暴力加了一個條件 判斷不是有效樹的話就回到原本的遞迴前的樹 但感覺會有問題 還沒檢查是不是真的有在換
-
                     # print(f'type(tmp_program): {type(tmp_program)}')
                     # print(f'tmp_program: {tmp_program}')
                     # print(self.if_validate(tmp_program))
