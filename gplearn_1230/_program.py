@@ -423,6 +423,7 @@ class _Program(object):
                 if subtree == 0:
                     subtree = "X0"
                     # print("subtree: ", subtree)
+            
             pickle_tree.append(self)
             pickle_tree.append(start)   
             pickle_tree.append(end)       
@@ -615,7 +616,7 @@ class _Program(object):
         return end
 
     
-    def get_possible_donor(self, program, X_train, y_truth, Mode, index, k = 10):
+    def get_possible_donor(self, program, Mode, index, k = 10):
         if Mode == "Random":
             RANDOM = True
         else:
@@ -645,14 +646,14 @@ class _Program(object):
                 else:
                     # Touramnet selection
                     # 先取一個list with k elements
-                    contenders = [random.randint(i-k, i+k) for _ in range(k)]
+                    contenders = [i for i in range(i-k, i+k)]
                     # 防呆
                     for idx in contenders:
                         if idx < 0:
-                            contenders = [i+1 for i in range(k)]
+                            contenders = [x + 1 for x in contenders]
                         elif idx >= len(pickle_trees):
-                            contenders = [i-1 for i in range(k)]
-                    donor_list = [pickle_trees[contenders[i]] for i in range(k)]
+                            contenders = [x - 1 for x in contenders]
+                    donor_list = [pickle_trees[i] for i in contenders]
                     return donor_list
                 
             else:
@@ -670,6 +671,7 @@ class _Program(object):
             left_start = node_index + 1
             left_end = self.get_subtree_bounds(left_start, program)
         else:
+            print("node is not a function or has no child")
             left_start = None
             left_end = None
         
@@ -678,6 +680,7 @@ class _Program(object):
             right_start = left_end 
             right_end = self.get_subtree_bounds(right_start, program)
         else:
+            print("node is not a function or has no child")
             right_start = None
             right_end = None
 
@@ -698,44 +701,49 @@ class _Program(object):
                     return x / y
              else:
                 mask = np.abs(y) < 1e-3
-                return x[mask] / y[mask]
+                return x / y[mask]
         expression = mystr(expression_list)
         X0 = X
         y_pred = eval(expression)
-        try:
-            y_pred = y_pred.reshape(-1)
-            print("expression_list: ", expression_list)
-            print(expression)
-        except:
-            print("")
-            print("expression_list: ", expression_list)
-            print(expression)
-            print("y_pred: ", y_pred)
-            print("y_pred", type(y_pred))
- 
         return np.mean(np.abs(y_true - y_pred))
     
     # 若使用random只會取一顆樹
     # 若使用touramnet會取k顆樹, 此處要計算貼上去後的fitness
-    def get_donor(self, removed_program, start, end,  X_train, ground_truth_y, Mode, index):
-        donor_list = self.get_possible_donor(removed_program, X_train, ground_truth_y, Mode, index)  
+    def get_donor(self, program, removed_program, start, end,  X_train, ground_truth_y, Mode, index):
+        """
+        program : original program
+        removed_program : the subtree that will be replaced
+        start : start index of the subtree
+        end : end index of the subtree
+        X_train : X_train
+        ground_truth_y : y_train
+        Mode : "Random" or "Touramnet"
+        index : the index of the program
+        """
+        donor_list = self.get_possible_donor(removed_program, Mode, index)  
         if Mode == "Random":
             donor_tree, donor_start, donor_end, _ = donor_list
         else:
             # 原樹的fitness
-            original_fitness = self.calculate_fitness(self.program, X_train, ground_truth_y)
-            lowest_fitness = 10000
+            original_fitness = self.calculate_fitness(program, X_train, ground_truth_y)
+            lowest_fitness = original_fitness
             # 計算候選人中最低的fitness
+            best_donor_tree = []
             for i in range(len(donor_list)):
                 donor_tree, donor_start, donor_end, _ = donor_list[i]
-                tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
-                # TODO : 目前fitness的計算應該剩一點小問題， 但因為會出現sub(x0, 0.3), x0的狀況，所以會變成計算兩棵樹的fitneess使型態變成tuple，這裡要再修正一下
-                # 主要就修正這個caculate_fitness的function
+                tmp_program= (program[:start] + donor_tree.program[donor_start:donor_end] + program[end:])
                 tmp_fitness = self.calculate_fitness(tmp_program, X_train, ground_truth_y)
-                if tmp_fitness < original_fitness and tmp_fitness < lowest_fitness:
+                if tmp_fitness <= lowest_fitness:
+                    # print(f'lowest_fitness: {lowest_fitness}')
+                    # print(f'tmp_fitness: {tmp_fitness}')
                     lowest_fitness = tmp_fitness
-                    donor_tree, donor_start, donor_end, _ = donor_list[i]
-        tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
+                    best_donor_tree = donor_list[i]
+            if best_donor_tree == []:
+                # 如果沒有找到有效的donor，就回傳原樹
+                return program, []
+            else:
+                donor_tree, donor_start, donor_end, _ = best_donor_tree
+        tmp_program= (program[:start] + donor_tree.program[donor_start:donor_end] + program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
         return tmp_program, donor_removed
@@ -762,7 +770,7 @@ class _Program(object):
             The flattened tree representation of the program.
 
         """
-        Mode = "Touramnet"
+        Mode = "Your method"
         # Using original crossover method when gen <= 10
         if gen <= 5:
             # Get a subtree to replace
@@ -780,17 +788,24 @@ class _Program(object):
         
         # Using my crossover method when gen > 10
         # Get a subtree
-        start, end = self.get_subtree(random_state)
+        start = 0
+        left_start, left_end, right_start, right_end = self.get_left_right_subtree(self.program, start)
+        direction = random.choice(['left', 'right'])
+        if direction == 'left' and left_start is not None:
+            start, end = left_start, left_end
+        elif direction == 'right' and right_start is not None:
+            start, end = right_start, right_end
+        else :
+            pass
         removed = range(start, end)
         removed_program = self.program[start:end]
-        tmp_program, donor_removed = self.get_donor(removed_program, start, end, X_train, ground_truth_y, Mode, index)
+        tmp_program, donor_remain = self.get_donor(self.program, removed_program, start, end, X_train, ground_truth_y, Mode, index)
         # Get a subtree to donate
-        
-
+        init_removed = removed_program
+        init_remain_donor = donor_remain
         while True:
             # if the node is a leaf, break
             if not isinstance(tmp_program[start], _Function):
-                # print("tmp_program[start]: ", tmp_program[start])
                 break
             # TODO : Use Monte Carlo tree search (MCTS) to decide the direction
             direction = random.choice(['left', 'right'])
@@ -805,15 +820,17 @@ class _Program(object):
                 break
             if direction == 'left' and left_start is not None:
                 start, end = left_start, left_end
-                # print(f'go left and start: {start}')
-                # print(f'go left and end: {end}')
+
             elif direction == 'right' and right_start is not None:
                 start, end = right_start, right_end
             else :
                 break
             removed_program = tmp_program[start:end]
-            tmp_program, donor_removed = self.get_donor(removed_program, start, end, X_train, ground_truth_y, Mode, index)
-        return tmp_program, removed, donor_removed
+            tmp_program, donor_remain = self.get_donor(tmp_program, removed_program, start, end, X_train, ground_truth_y, Mode, index)
+        # print(f'gen: {gen}')
+        # print(f'program:', mystr(self.program))
+        # print(f'tmp_program:', mystr(tmp_program))
+        return tmp_program, init_removed, init_remain_donor
 
         # # Get a subtree to replace
         # start, end = self.get_subtree(random_state)

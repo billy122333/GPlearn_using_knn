@@ -55,11 +55,11 @@ def make_pickle_file(index):
         pickle_trees[i].append(y_avg)   
 
     sorted_pickle_trees = sorted(pickle_trees, key= lambda p: p[3])
-    # print(sorted_pickle_trees[0])
-    # print(sorted_pickle_trees[1])
-    # print(sorted_pickle_trees[2])
-    # print(sorted_pickle_trees[3])
-    # pickle_name = "knn_data" + str(index) + ".pkl"
+
+    with open (f"knn_data{index}.txt", "w") as f:
+        for i in range(len(sorted_pickle_trees)):
+            f.write(f"{mystr(sorted_pickle_trees[i][0].program)}, {sorted_pickle_trees[i][1]}, {sorted_pickle_trees[i][2]}\n")
+
     with open(f"knn_data{index}.pkl", "wb") as pklfile:
-        # print("len(sorted_pickle_trees): ", len(sorted_pickle_trees))
+        print("len(sorted_pickle_trees): ", len(sorted_pickle_trees))
         pickle.dump(sorted_pickle_trees, pklfile)
