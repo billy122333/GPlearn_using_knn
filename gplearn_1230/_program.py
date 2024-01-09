@@ -760,7 +760,7 @@ class _Program(object):
         return np.mean(np.abs(y_true - y_pred))
     
     def calculate_fitness_old(self, expression_list, X, y_true):
-        # 拿子豪的code來改的
+        # 拿梓豪的code來改的
         def add(x, y):
             return x + y
         def sub(x, y):
