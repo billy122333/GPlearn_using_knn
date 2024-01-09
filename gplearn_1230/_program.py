@@ -615,13 +615,10 @@ class _Program(object):
             if isinstance(node, _Function):
                 stack += node.arity
             end += 1
-        if end >= len(program):
-            end = len(program)
         return end
 
     
-    def get_possible_donor(self, removed_program, Mode, index, k = 10):
-        program = removed_program
+    def get_possible_donor(self, program, X_train, y_truth, Mode, index, k = 10):
         if Mode == "Random":
             RANDOM = True
         else:
@@ -793,66 +790,67 @@ class _Program(object):
         return np.mean(np.abs(y_true - y_pred))
     
     # 若使用random只會取一顆樹
-    # 若使用tournament會取k顆樹, 此處要計算貼上去後的fitness
+    # 若使用touramnet會取k顆樹, 此處要計算貼上去後的fitness
     def get_donor(self, removed_program, start, end,  X_train, ground_truth_y, Mode, index):
-        # print("*****************")
-        # print(f'start: {start}')
-        # print(f'end: {end}')
-        # print("*****************")
-        donor_list = self.get_possible_donor(removed_program, Mode, index)  
-        # print(f'donor_list: {donor_list}')
+        donor_list = self.get_possible_donor(removed_program, X_train, ground_truth_y, Mode, index)  
         if Mode == "Random":
             donor_tree, donor_start, donor_end, _ = donor_list
         else:
-            # 原樹的fitness
-            # print(self.program)
-            if self.if_validate(self.program): # Check if the tree is a valid tree
-                original_fitness = self.calculate_fitness(self.program, X_train, ground_truth_y)
-                lowest_fitness = 10000
-                # 計算候選人中最低的fitness
-                # print(len(donor_list))
-                for i in range(len(donor_list)):
+            # # 原樹的fitness
+            # # print(self.program)
+            # if self.if_validate(self.program): # Check if the tree is a valid tree
+            #     original_fitness = self.calculate_fitness(self.program, X_train, ground_truth_y)
+            #     lowest_fitness = 10000
+            #     # 計算候選人中最低的fitness
+            #     # print(len(donor_list))
+            #     for i in range(len(donor_list)):
+            #         donor_tree, donor_start, donor_end, _ = donor_list[i]
+            #         # print(f'donor_tree: {donor_tree}')
+            #         # print(f'donor_start: {donor_start}')
+            #         # print(f'donor_end: {donor_end}')
+            #         # print(f'self.program[:start]: {mystr(self.program[:start])}')
+            #         # print(f'donor_tree.program[donor_start:donor_end]: {mystr(donor_tree.program[donor_start:donor_end])}')
+            #         # print(f'self.program[end:]: {mystr(self.program[end:])}')
+            #         # print(self.program)
+            #         # print(len(self.program))
+            #         # print(start, end)
+            #         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
+            #         # print(f'type(tmp_program): {type(tmp_program)}')
+            #         # print(f'tmp_program: {tmp_program}')
+            #         # print(self.if_validate(tmp_program))
+            #         if self.if_validate(tmp_program):
+            #             # print("-------valid---------")
+            #             # print(f'start: {start}')
+            #             # print(f'end: {end}')
+            #             # print("---------------------")
+            #             tmp_fitness = self.calculate_fitness(tmp_program, X_train, ground_truth_y)
+            #             if tmp_fitness < original_fitness and tmp_fitness < lowest_fitness:
+            #                 lowest_fitness = tmp_fitness
+            #                 donor_tree, donor_start, donor_end, _ = donor_list[i]
+            #         # else:
+            #         #     print("Invalid tmp_program!!!")
+            #             # print("-------invalid--------")
+            #             # print(f'start: {start}')
+            #             # print(f'end: {end}')
+            #             # print("---------------------")
+            #             # print(self.program[:start])
+            #             # print(donor_tree.program[donor_start:donor_end])
+            #             # print(self.program[end:])
+            #             # print(f'Invalid tmp_program: {mystr(tmp_program)}!!!')
+            # else:
+                # print(f'Invalid Program: {self.program}!!!')
+            original_fitness = self.calculate_fitness(self.program, X_train, ground_truth_y)
+            lowest_fitness = 10000
+            # 計算候選人中最低的fitness
+            for i in range(len(donor_list)):
+                donor_tree, donor_start, donor_end, _ = donor_list[i]
+                tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
+                # TODO : 目前fitness的計算應該剩一點小問題， 但因為會出現sub(x0, 0.3), x0的狀況，所以會變成計算兩棵樹的fitneess使型態變成tuple，這裡要再修正一下
+                # 主要就修正這個caculate_fitness的function
+                tmp_fitness = self.calculate_fitness(tmp_program, X_train, ground_truth_y)
+                if tmp_fitness < original_fitness and tmp_fitness < lowest_fitness:
+                    lowest_fitness = tmp_fitness
                     donor_tree, donor_start, donor_end, _ = donor_list[i]
-                    # print(f'donor_tree: {donor_tree}')
-                    # print(f'donor_start: {donor_start}')
-                    # print(f'donor_end: {donor_end}')
-                    # print(f'self.program[:start]: {mystr(self.program[:start])}')
-                    # print(f'donor_tree.program[donor_start:donor_end]: {mystr(donor_tree.program[donor_start:donor_end])}')
-                    # print(f'self.program[end:]: {mystr(self.program[end:])}')
-                    # print(self.program)
-                    # print(len(self.program))
-                    # print(start, end)
-                    tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
-                    # TODO : 目前fitness的計算應該剩一點小問題， 但因為會出現sub(x0, 0.3), x0的狀況，所以會變成計算兩棵樹的fitneess使型態變成tuple，這裡要再修正一下
-                    # 主要就修正這個caculate_fitness的function 
-                    
-                    # 01/06: 我後來trace了一下 好像是遞迴的時候出事 start跟end變動的時候會導致無效樹
-                    # 我先暴力加了一個條件 判斷不是有效樹的話就回到原本的遞迴前的樹 但感覺會有問題 還沒檢查是不是真的有在換
-
-                    # print(f'type(tmp_program): {type(tmp_program)}')
-                    # print(f'tmp_program: {tmp_program}')
-                    # print(self.if_validate(tmp_program))
-                    if self.if_validate(tmp_program):
-                        # print("-------valid---------")
-                        # print(f'start: {start}')
-                        # print(f'end: {end}')
-                        # print("---------------------")
-                        tmp_fitness = self.calculate_fitness(tmp_program, X_train, ground_truth_y)
-                        if tmp_fitness < original_fitness and tmp_fitness < lowest_fitness:
-                            lowest_fitness = tmp_fitness
-                            donor_tree, donor_start, donor_end, _ = donor_list[i]
-                    # else:
-                    #     print("Invalid tmp_program!!!")
-                        # print("-------invalid--------")
-                        # print(f'start: {start}')
-                        # print(f'end: {end}')
-                        # print("---------------------")
-                        # print(self.program[:start])
-                        # print(donor_tree.program[donor_start:donor_end])
-                        # print(self.program[end:])
-                        # print(f'Invalid tmp_program: {mystr(tmp_program)}!!!')
-            else:
-                print(f'Invalid Program: {self.program}!!!')
         tmp_program= (self.program[:start] + donor_tree.program[donor_start:donor_end] + self.program[end:])
         donor_removed = list(set(range(len(donor_tree.program))) -
                              set(range(donor_start, donor_end)))
@@ -949,14 +947,7 @@ class _Program(object):
                 break
             tmp_program_before_recursed = tmp_program
             removed_program = tmp_program[start:end]
-            # print("removed_program: ", mystr(removed_program))
             tmp_program, donor_removed = self.get_donor(removed_program, start, end, X_train, ground_truth_y, Mode, index)
-            # print(self.if_validate(tmp_program))
-            if self.if_validate(tmp_program) == False:
-                tmp_program = tmp_program_before_recursed
-                break
-            # print(f'recursed tmp_program: {mystr(tmp_program)}')
-            
         return tmp_program, removed, donor_removed
 
         # # Get a subtree to replace
