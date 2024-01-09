@@ -107,6 +107,7 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
 
             if method < method_probs[0]:
                 # crossover
+                # TODO : In gplearn Using tourament selection to find the donor
                 donor, donor_index = _tournament() # tournament selection
                 # print(type(donor))
                 # print(type(donor_index))
