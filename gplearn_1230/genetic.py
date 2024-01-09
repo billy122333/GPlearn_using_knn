@@ -85,16 +85,6 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
 
     pickle_trees.clear()
     for i in range(n_programs):
-        # print(f'The {i}th program!!!')
-    
-        # with open("knn_data.csv", "a", newline="") as csvfile:
-        #     writer = csv.writer(csvfile)
-        #     program_index = [str(i)]
-        #     writer.writerow(program_index)
-            # if i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
-            #     writer.writerow([f'{i}'])
-            # else:
-            #     writer.writerow([f'{i}'])
 
         random_state = check_random_state(seeds[i])
 
@@ -109,12 +99,10 @@ def _parallel_evolve(n_programs, parents, X, y, sample_weight, seeds, params, in
                 # crossover
                 # TODO : In gplearn Using tourament selection to find the donor
                 donor, donor_index = _tournament() # tournament selection
-                # print(type(donor))
-                # print(type(donor_index))
-                # print(donor)
-                # print(donor_index)
+
                 program, removed, remains = parent.crossover(donor.program, X, y,  
                                                              random_state, index, gen)
+                # print("program: ", program)
                 genome = {'method': 'Crossover',
                           'parent_idx': parent_index,
                           'parent_nodes': removed,
